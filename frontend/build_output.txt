@@ -39,13 +39,7 @@ WARNING: Restricted methods will be blocked in a future release unless native ac
 > Task :app:validateSigningDebug UP-TO-DATE
 > Task :app:writeDebugAppMetadata UP-TO-DATE
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
-
 > Task :app:compileDebugKotlin
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:847:81 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:943:43 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1604:39 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1640:43 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-
 > Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugJavaResource UP-TO-DATE
@@ -55,5 +49,5 @@ w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learn
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 12s
+BUILD SUCCESSFUL in 14s
 37 actionable tasks: 4 executed, 33 up-to-date
