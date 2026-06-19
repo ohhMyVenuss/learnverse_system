@@ -8,8 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // Default base URL for Android Emulator pointing to local Spring Boot backend (running on localhost:8080)
-    private const val BASE_URL = "http://10.0.2.2:8080/api/"
+    // Default base URL pointing to local Spring Boot backend (running on localhost:8080)
+    private const val BASE_URL = "http://192.168.5.12:8080/api/"
 
     private fun createOkHttpClient(tokenManager: TokenManager): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
