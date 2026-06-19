@@ -210,10 +210,12 @@ graph TD
    * **Bước 3.5 (Hiển thị Thông báo):** Phương thức `onReceive()` của `AlarmReceiver` tạo lập kênh thông báo (`learnverse_study_plans` với độ ưu tiên `IMPORTANCE_HIGH`) và gọi `NotificationManager` để hiển thị một thông báo đầu màn hình (Push Notification) kèm chuông/rung. Khi nhấp vào thông báo, ứng dụng Learnverse sẽ được khởi chạy và dẫn trực tiếp vào màn hình lịch trình.
 
 4. **Tương tác trên giao diện Google Calendar:**
-   * **Bước 4.1:** Giao diện `CalendarSection` được dựng dựa trên thư viện ngày tháng của Java (`java.time.LocalDate` và `java.time.YearMonth`). Ứng dụng vẽ một bảng lưới lịch tháng gồm 7 cột đại diện từ Thứ 2 đến Chủ nhật.
-   * **Bước 4.2:** Hệ thống duyệt qua danh sách các lịch trình đang lưu cục bộ. Nếu ngày nào có lịch học, hệ thống sẽ vẽ các chấm tròn màu sắc tương ứng dưới chữ số ngày đó. (Màu chấm được quyết định dựa vào mức độ quan trọng cao nhất của các sự kiện diễn ra trong ngày đó).
-   * **Bước 4.3 (Lọc tương tác):** Khi học viên chạm vào một ô ngày cụ thể trên lưới lịch, biến trạng thái `selectedCalendarDate` cập nhật giá trị ngày đã chọn. Lưới lịch vẽ viền xung quanh ô ngày được chọn, đồng thời danh sách lịch trình bên dưới được áp dụng bộ lọc động `filteredNotes = notesList.filter { eventDate == selectedDate }` để chỉ hiển thị các lịch học trong ngày đó.
-   * **Bước 4.4:** Học viên nhấn nút "Hiện tất cả" (Show All) để xóa bộ lọc ngày hiện tại và hiển thị lại toàn bộ lịch trình học tập của tháng.
+   * **Bước 4.1 (Thu gọn / Mở rộng Lịch):** Giao diện `CalendarSection` hỗ trợ hai chế độ hiển thị: Chế độ Tuần (Week View - hiển thị 1 dòng 7 ngày) và Chế độ Tháng (Month View - hiển thị lưới lịch tháng đầy đủ). Nhấn nút Mũi tên (Lên/Xuống) ở phần Header lịch sẽ thay đổi trạng thái `isCalendarExpanded` để hoán đổi chế độ xem, kết hợp hiệu ứng co giãn mượt mà `.animateContentSize()` giúp giải phóng tối đa không gian màn hình cho danh sách lịch trình bên dưới.
+   * **Bước 4.2:** Lịch hiển thị các ngày dựa trên Java Time (`java.time.LocalDate` và `java.time.YearMonth`).
+     * Trong chế độ xem Tuần, hệ thống tính toán ngày thứ Hai của tuần chứa ngày được chọn và vẽ 7 ngày liên tiếp từ thứ Hai đến Chủ Nhật.
+     * Trong chế độ xem Tháng, hệ thống căn lề ngày đầu tháng và vẽ toàn bộ các tuần của tháng đó.
+   * **Bước 4.3 (Chấm sự kiện):** Hệ thống duyệt danh sách lịch trình. Ngày nào có kế hoạch học tập, hệ thống sẽ vẽ các chấm tròn màu sắc tương ứng (Đỏ: Quan trọng, Cam: Trung bình, Xám: Thấp) dựa trên mức độ quan trọng cao nhất của các sự kiện diễn ra ngày hôm đó.
+   * **Bước 4.4 (Lọc tương tác):** Khi chạm vào một ngày cụ thể trên lưới lịch (ở cả 2 chế độ xem), ứng dụng lọc danh sách hiển thị chỉ gồm các sự kiện diễn ra vào ngày đã chọn. Nhấn nút "Hiện tất cả" (Show All) để hoàn tác bộ lọc và khôi phục chế độ xem tuần hiện tại.
 
 ---
 

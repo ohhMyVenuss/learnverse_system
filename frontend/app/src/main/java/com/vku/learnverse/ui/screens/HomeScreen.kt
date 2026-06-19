@@ -1,5 +1,6 @@
 package com.vku.learnverse.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -1556,7 +1557,16 @@ fun CalendarSection(
     selectedCalendarDate: LocalDate?,
     onDateSelect: (LocalDate?) -> Unit
 ) {
+    var isCalendarExpanded by remember { mutableStateOf(false) }
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var currentWeekDate by remember { mutableStateOf(selectedCalendarDate ?: LocalDate.now()) }
+
+    LaunchedEffect(selectedCalendarDate) {
+        if (selectedCalendarDate != null) {
+            currentWeekDate = selectedCalendarDate
+            currentMonth = YearMonth.from(selectedCalendarDate)
+        }
+    }
 
     val plansByDate = remember(notes) {
         notes.filter { it.type == NoteType.STUDY_PLAN }
@@ -1571,6 +1581,7 @@ fun CalendarSection(
             .groupBy({ it.first }, { it.second })
     }
 
+    // Calculations for Month View
     val gridItems = remember(currentMonth) {
         val list = mutableListOf<LocalDate?>()
         val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek.value // 1 (Mon) to 7 (Sun)
@@ -1582,12 +1593,19 @@ fun CalendarSection(
         }
         list
     }
-
     val rows = remember(gridItems) { gridItems.chunked(7) }
+
+    // Calculations for Week View
+    val weekDays = remember(currentWeekDate) {
+        val dayOfWeek = currentWeekDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
+        val monday = currentWeekDate.minusDays((dayOfWeek - 1).toLong())
+        (0..6).map { monday.plusDays(it.toLong()) }
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
             .shadow(4.dp, RoundedCornerShape(16.dp))
             .border(1.dp, BorderDark, RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = BgCard),
@@ -1600,8 +1618,15 @@ fun CalendarSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Tháng trước")
+                IconButton(onClick = {
+                    if (isCalendarExpanded) {
+                        currentMonth = currentMonth.minusMonths(1)
+                    } else {
+                        currentWeekDate = currentWeekDate.minusWeeks(1)
+                        currentMonth = YearMonth.from(currentWeekDate)
+                    }
+                }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Trước")
                 }
                 
                 Row(
@@ -1609,7 +1634,11 @@ fun CalendarSection(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = currentMonth.format(DateTimeFormatter.ofPattern("'Tháng' MM, yyyy", java.util.Locale.forLanguageTag("vi"))),
+                        text = if (isCalendarExpanded) {
+                            currentMonth.format(DateTimeFormatter.ofPattern("'Tháng' MM, yyyy", java.util.Locale.forLanguageTag("vi")))
+                        } else {
+                            currentWeekDate.format(DateTimeFormatter.ofPattern("'Tháng' MM, yyyy", java.util.Locale.forLanguageTag("vi")))
+                        },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -1632,12 +1661,30 @@ fun CalendarSection(
                             color = Pink,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
-                                .clickable { onDateSelect(null) }
+                                .clickable {
+                                    onDateSelect(null)
+                                    currentWeekDate = LocalDate.now()
+                                    currentMonth = YearMonth.now()
+                                }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                    IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                        Icon(Icons.Filled.ArrowForward, contentDescription = "Tháng sau")
+                    IconButton(onClick = { isCalendarExpanded = !isCalendarExpanded }) {
+                        Icon(
+                            imageVector = if (isCalendarExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                            contentDescription = if (isCalendarExpanded) "Thu gọn" else "Mở rộng",
+                            tint = Pink
+                        )
+                    }
+                    IconButton(onClick = {
+                        if (isCalendarExpanded) {
+                            currentMonth = currentMonth.plusMonths(1)
+                        } else {
+                            currentWeekDate = currentWeekDate.plusWeeks(1)
+                            currentMonth = YearMonth.from(currentWeekDate)
+                        }
+                    }) {
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "Sau")
                     }
                 }
             }
@@ -1665,25 +1712,43 @@ fun CalendarSection(
 
             // Days Grid
             Column(modifier = Modifier.fillMaxWidth()) {
-                rows.forEach { week ->
+                if (isCalendarExpanded) {
+                    rows.forEach { week ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            week.forEach { date ->
+                                CalendarDayCell(
+                                    date = date,
+                                    isSelected = date != null && date == selectedCalendarDate,
+                                    eventImportances = if (date != null) plansByDate[date] ?: emptyList() else emptyList(),
+                                    onClick = {
+                                        if (date != null) {
+                                            onDateSelect(if (selectedCalendarDate == date) null else date)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        week.forEach { date ->
+                        weekDays.forEach { date ->
                             CalendarDayCell(
                                 date = date,
-                                isSelected = date != null && date == selectedCalendarDate,
-                                eventImportances = if (date != null) plansByDate[date] ?: emptyList() else emptyList(),
+                                isSelected = date == selectedCalendarDate,
+                                eventImportances = plansByDate[date] ?: emptyList(),
                                 onClick = {
-                                    if (date != null) {
-                                        onDateSelect(if (selectedCalendarDate == date) null else date)
-                                    }
+                                    onDateSelect(if (selectedCalendarDate == date) null else date)
                                 }
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
         }

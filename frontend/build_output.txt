@@ -3,7 +3,6 @@ WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.i
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
-Starting a Gradle Daemon, 1 incompatible and 3 stopped Daemons could not be reused, use --status for details
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
@@ -19,8 +18,10 @@ Starting a Gradle Daemon, 1 incompatible and 3 stopped Daemons could not be reus
 > Task :app:parseDebugLocalResources UP-TO-DATE
 > Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
 > Task :app:javaPreCompileDebug UP-TO-DATE
 > Task :app:mergeDebugShaders UP-TO-DATE
 > Task :app:compileDebugShaders NO-SOURCE
@@ -38,26 +39,12 @@ Starting a Gradle Daemon, 1 incompatible and 3 stopped Daemons could not be reus
 > Task :app:validateSigningDebug UP-TO-DATE
 > Task :app:writeDebugAppMetadata UP-TO-DATE
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
-> Task :app:processDebugManifestForPackage
-> Task :app:processDebugResources
 
 > Task :app:compileDebugKotlin
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/CourseStudyWorkspace.kt:671:50 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/CourseStudyWorkspace.kt:694:50 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/CourseStudyWorkspace.kt:882:53 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/ForgotPasswordScreen.kt:83:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/ForgotPasswordScreen.kt:192:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:847:81 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:943:43 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1604:39 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1640:43 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/ResetPasswordScreen.kt:92:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/ResetPasswordScreen.kt:282:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/SignInScreen.kt:283:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/SignUpScreen.kt:286:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/VerifyOtpScreen.kt:97:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/VerifyOtpScreen.kt:235:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
-w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/WelcomeScreen.kt:209:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:848:81 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
+w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:944:43 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
+w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1629:39 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/ui/screens/HomeScreen.kt:1687:43 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
 
 > Task :app:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:processDebugJavaRes UP-TO-DATE
@@ -68,5 +55,5 @@ w: file:///D:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learn
 > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 1m 12s
-37 actionable tasks: 8 executed, 29 up-to-date
+BUILD SUCCESSFUL in 14s
+37 actionable tasks: 4 executed, 33 up-to-date
