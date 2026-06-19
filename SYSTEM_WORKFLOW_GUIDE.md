@@ -200,11 +200,14 @@ graph TD
    * **Bước 2.4 (Đồng bộ ID cục bộ):** API trả về đối tượng `UserNoteDto` đã lưu kèm ID mới nhận (`id = 104`). `NotesManager` cập nhật đối tượng lịch trình tạm thời trong `SharedPreferences` cục bộ thành ID `"104"`.
 
 3. **Cài đặt báo thức thiết bị (Alarm Notification Flow):**
-   * **Bước 3.1:** Nếu học viên chọn "Bật thông báo nhắc nhở", `NotesManager` sẽ gọi đến `AlarmScheduler.scheduleAlarm(context, note)`.
+   * **Bước 3.1 (Cấp quyền Thông báo):** Trên Android 13+ (API 33+), ứng dụng hiển thị hộp thoại yêu cầu cấp quyền thông báo động `POST_NOTIFICATIONS` khi người dùng mở `MainActivity` lần đầu tiên. Nếu học viên cho phép và chọn tùy chọn "Bật thông báo nhắc nhở" khi tạo lịch học, `NotesManager` sẽ gọi `AlarmScheduler.scheduleAlarm(context, note)`.
    * **Bước 3.2:** `AlarmScheduler` tính toán thời điểm hẹn giờ học (dạng milliseconds) dựa vào thông tin ngày/giờ đã chọn trong `eventDate`.
-   * **Bước 3.3:** Hệ thống lấy dịch vụ hệ thống `AlarmManager` của Android và đăng ký một sự kiện báo thức chính xác bằng cờ `AlarmManager.RTC_WAKEUP` kết hợp sử dụng `PendingIntent` trỏ tới `AlarmReceiver` (một lớp kế thừa `BroadcastReceiver`). Cờ `RTC_WAKEUP` đảm bảo thiết bị sẽ tự động thức tỉnh màn hình để xử lý báo thức ngay cả khi điện thoại đang ở chế độ ngủ (Doze Mode).
-   * **Bước 3.4:** Đến đúng thời gian đã hẹn, hệ điều hành Android phát tín hiệu kích hoạt `AlarmReceiver`.
-   * **Bước 3.5:** Phương thức `onReceive()` của `AlarmReceiver` đón nhận sự kiện, trích xuất thông tin tiêu đề lịch học được truyền kèm trong Intent, tạo lập kênh thông báo (Notification Channel) và gọi `NotificationManager` của Android để hiển thị một thông báo đầu màn hình (Push Notification) kèm chuông báo và độ rung để báo hiệu cho học viên biết đã đến giờ tự học. Khi nhấp vào thông báo, ứng dụng Learnverse sẽ được khởi chạy và dẫn trực tiếp vào màn hình lịch trình.
+   * **Bước 3.3 (Quản lý Báo thức an toàn trên Android 12+):** Hệ thống lấy dịch vụ hệ thống `AlarmManager`.
+     * Trên Android 12+ (API 31+), hệ thống kiểm tra quyền lập lịch báo thức chính xác bằng `alarmManager.canScheduleExactAlarms()`.
+     * Nếu đã được cấp quyền, hệ thống dùng `setExactAndAllowWhileIdle()` với cờ `AlarmManager.RTC_WAKEUP` để đảm bảo báo thức chạy chuẩn xác từng giây kể cả khi điện thoại ở chế độ ngủ (Doze Mode).
+     * Nếu chưa được cấp quyền, hệ thống tự động chuyển sang cơ chế dự phòng `setAndAllowWhileIdle()` để tránh gây lỗi crash `SecurityException`.
+   * **Bước 3.4:** Đến đúng thời gian đã hẹn, hệ điều hành Android phát tín hiệu kích hoạt `AlarmReceiver` (lớp kế thừa `BroadcastReceiver`).
+   * **Bước 3.5 (Hiển thị Thông báo):** Phương thức `onReceive()` của `AlarmReceiver` tạo lập kênh thông báo (`learnverse_study_plans` với độ ưu tiên `IMPORTANCE_HIGH`) và gọi `NotificationManager` để hiển thị một thông báo đầu màn hình (Push Notification) kèm chuông/rung. Khi nhấp vào thông báo, ứng dụng Learnverse sẽ được khởi chạy và dẫn trực tiếp vào màn hình lịch trình.
 
 4. **Tương tác trên giao diện Google Calendar:**
    * **Bước 4.1:** Giao diện `CalendarSection` được dựng dựa trên thư viện ngày tháng của Java (`java.time.LocalDate` và `java.time.YearMonth`). Ứng dụng vẽ một bảng lưới lịch tháng gồm 7 cột đại diện từ Thứ 2 đến Chủ nhật.
@@ -262,3 +265,18 @@ sequenceDiagram
    * **Bước 2.5:** Ứng dụng di động tính toán kết quả: Mỗi câu trả lời đúng được cộng 10 điểm. Ứng dụng gửi yêu cầu nộp bài HTTP POST đến `/api/quizzes/attempts/{attemptId}/complete` kèm theo danh sách đáp án học viên đã chọn.
    * **Bước 2.6:** Backend đối chiếu đáp án từ CSDL, tính điểm cuối cùng (`totalScore`), số điểm tối đa (`maxScore`) và phần trăm làm đúng (`percentage`). Cập nhật bản ghi `quiz_attempts` thành trạng thái `isCompleted = true` và lưu thời gian hoàn thành (`completedAt`).
    * **Bước 2.7:** Backend trả về thông tin chi tiết kết quả. Android Client hiển thị giao diện báo điểm sinh động kèm bảng so sánh đáp án đúng/sai của từng câu để học viên rút kinh nghiệm học tập. Kết quả thi đồng thời được lưu vào hệ thống để xếp hạng thi đua học tập (Leaderboard).
+
+---
+
+## 5. Hướng Dẫn Kết Nối Mạng & Gỡ Lỗi Trên Điện Thoại Thật (Real Device Debugging)
+
+Khi gỡ lỗi ứng dụng Android Client trên điện thoại thật kết nối qua cáp USB, hệ thống áp dụng cơ chế kết nối tối ưu sau:
+
+### Cơ chế Chuyển Tiếp Cổng ADB (ADB Port Forwarding)
+* **Vấn đề kết nối mạng:** Máy ảo Android (Emulator) sử dụng IP mặc định `10.0.2.2` để trỏ vào `localhost` máy tính. Tuy nhiên, điện thoại thật không hỗ trợ địa chỉ này. Nếu sử dụng IP Wi-Fi nội bộ của máy tính, Tường lửa của Windows (Windows Defender Firewall) sẽ chặn các yêu cầu gửi đến cổng `8080`.
+* **Giải pháp áp dụng:** Sử dụng tính năng chuyển tiếp cổng ngược của ADB bằng lệnh:
+  ```bash
+  adb reverse tcp:8080 tcp:8080
+  ```
+* **Luồng đi của dữ liệu:** Bất kỳ yêu cầu kết nối nào gửi đến `http://127.0.0.1:8080` từ điện thoại thật sẽ được đi xuyên qua cáp kết nối USB để trỏ thẳng tới cổng `8080` trên máy tính chạy Backend Spring Boot, bỏ qua hoàn toàn các chính sách chặn mạng nội bộ của tường lửa.
+* **Cấu hình mã nguồn:** Trong file [RetrofitClient.kt](file:///d:/OhhhMyVenuss/LearnverseV2/frontend/app/src/main/java/com/vku/learnverse/data/api/RetrofitClient.kt), `BASE_URL` được đặt cố định là `http://127.0.0.1:8080/api/` để tương thích hoàn toàn với cơ chế ADB reverse.
