@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -15,18 +16,22 @@ class AlarmReceiver : BroadcastReceiver() {
         val content = intent.getStringExtra("content") ?: "Đến giờ thực hiện kế hoạch học tập rồi!"
         val noteId = intent.getLongExtra("noteId", 0L)
 
-        val channelId = "learnverse_study_plans"
+        val channelId = "learnverse_alarms"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Lịch trình học tập",
+                "Lịch báo thức học tập",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Kênh thông báo nhắc nhở kế hoạch học tập & lịch thi"
-                setSound(soundUri, null)
+                description = "Kênh phát âm thanh báo thức kéo dài cho kế hoạch học tập & lịch thi"
+                val audioAttributes = AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build()
+                setSound(soundUri, audioAttributes)
                 enableVibration(true)
                 vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)
             }
@@ -40,6 +45,7 @@ class AlarmReceiver : BroadcastReceiver() {
             .setSound(soundUri)
             .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .build()
 
