@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     // Default base URL pointing to local Spring Boot backend (running on localhost:8080)
-    private const val BASE_URL = "http://192.168.5.12:8080/api/"
+    private const val BASE_URL = "http://127.0.0.1:8080/api/"
 
     private fun createOkHttpClient(tokenManager: TokenManager): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
