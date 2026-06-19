@@ -35,11 +35,11 @@ graph TD
 
 ---
 
-## 2. Các Quy Trình Nghiệp Vụ Cốt Lõi & Luồng Tương Tác
+## 2. Mô Tả Luồng Hoạt Động Chi Tiết Cho Từng Chức Năng
 
 ### Chức năng 1: Quy Trình Xác Thực (Authentication & Security)
 
-Hệ thống sử dụng cơ chế xác thực không trạng thái (Stateless) dựa trên **JWT Token** kết hợp gửi mã xác thực **OTP qua Email** để khôi phục mật khẩu hoặc xác thực tài khoản.
+Chức năng xác thực đảm bảo an toàn truy cập cho toàn bộ hệ thống bằng cơ chế Token JWT không trạng thái (Stateless), kết hợp gửi mã OTP xác minh qua Email khi đăng ký hoặc quên mật khẩu.
 
 ```mermaid
 sequenceDiagram
@@ -64,15 +64,31 @@ sequenceDiagram
     Client->>Client: Lưu JWT vào bộ nhớ bảo mật (SharedPreferences/LocalStorage)
 ```
 
-> [!NOTE]
-> Mọi yêu cầu HTTP gửi đến các tài nguyên được bảo vệ (sau đăng nhập) bắt buộc phải đính kèm Header:
-> `Authorization: Bearer <JWT_TOKEN>`
+#### Các bước hoạt động chi tiết:
+1. **Đăng ký Tài khoản mới:**
+   * **Bước 1.1 (Client):** Người dùng nhập thông tin: Họ tên, Email, Mật khẩu trên giao diện `SignUpScreen` (Android) hoặc `RegisterPage` (React Web). Hệ thống kiểm tra định dạng email và độ mạnh của mật khẩu trước khi gửi đi.
+   * **Bước 1.2 (Client -> Backend):** Gửi yêu cầu qua HTTP POST đến `/api/auth/register` đính kèm DTO chứa thông tin đăng ký.
+   * **Bước 1.3 (Backend):** `AuthController` tiếp nhận và chuyển tiếp cho `AuthService`. Hệ thống thực hiện kiểm tra xem email đã tồn tại trong CSDL hay chưa thông qua `UserRepository`.
+   * **Bước 1.4 (Backend):** Nếu email hợp lệ, mật khẩu được mã hóa bằng thuật toán `BCryptPasswordEncoder`. Một bản ghi `User` mới được tạo với `Role.STUDENT` (mặc định) và trạng thái `active = false`.
+   * **Bước 1.5 (Backend):** Sinh ngẫu nhiên một mã OTP gồm 6 chữ số, lưu trữ tạm thời trong CSDL (bảng `otps` kèm thời gian hết hạn là 5 phút) và gọi `EmailService` để gửi thư chứa mã OTP đến địa chỉ email đăng ký của người dùng qua SMTP Server của Google Gmail.
+   * **Bước 1.6 (Client):** Giao diện tự động chuyển sang màn hình **Xác thực OTP (Verify OTP)**.
+   * **Bước 1.7 (User -> Client):** Người dùng kiểm tra hòm thư cá nhân, lấy mã OTP và nhập vào giao diện, nhấn nút "Xác thực".
+   * **Bước 1.8 (Client -> Backend):** Gửi yêu cầu HTTP POST đến `/api/auth/verify-otp` kèm theo email và mã OTP đã nhập.
+   * **Bước 1.9 (Backend):** Hệ thống đối chiếu mã OTP từ CSDL. Nếu mã chính xác và chưa quá thời gian hết hạn (5 phút), thuộc tính `active` của tài khoản `User` sẽ được cập nhật thành `true`. Xóa bản ghi OTP cũ. Trả về kết quả kích hoạt tài khoản thành công.
+
+2. **Đăng nhập Hệ thống:**
+   * **Bước 2.1 (Client):** Người dùng nhập Email và Mật khẩu trên màn hình đăng nhập (`SignInScreen` / `LoginPage`).
+   * **Bước 2.2 (Client -> Backend):** Gửi yêu cầu HTTP POST đến `/api/auth/login`.
+   * **Bước 2.3 (Backend):** `AuthService` truy vấn người dùng từ CSDL theo email. Kiểm tra xem tài khoản đã được kích hoạt (`active = true`) chưa. Sử dụng hàm `passwordEncoder.matches()` để đối chiếu mật khẩu đã nhập với mật khẩu đã băm trong cơ sở dữ liệu.
+   * **Bước 2.4 (Backend):** Nếu thông tin chính xác, hệ thống sử dụng thư viện JWT để tạo ra chuỗi **JWT Access Token** ký bằng khóa bí mật (Secret Key). Token chứa các trường thông tin ẩn (Claims): `userId`, `email`, `role`.
+   * **Bước 2.5 (Backend -> Client):** Trả về phản hồi HTTP 200 kèm theo JWT Token và thông tin cơ bản của người dùng (tên, avatarUrl, quyền hạn).
+   * **Bước 2.6 (Client):** Client lưu trữ an toàn JWT Token vào bộ nhớ cục bộ (`SharedPreferences` trên Android hoặc `localStorage` trên Web). Mọi yêu cầu API gọi dữ liệu bảo mật sau này đều tự động đính kèm Header: `Authorization: Bearer <token>`.
 
 ---
 
 ### Chức năng 2: Đăng Ký Khóa Học & Quy Trình Thanh Toán (Payments & Enrollment)
 
-Learnverse V2 hỗ trợ đăng ký và mua khóa học bằng hệ thống giả lập thanh toán (Mock Payment Gateway), tự động kích hoạt quyền học tập ngay khi giao dịch thành công.
+Hệ thống cho phép học viên khám phá các khóa học và mua khóa học thông qua cổng thanh toán giả lập (Mock Payment Gateway), mở khóa quyền truy cập bài học ngay lập tức.
 
 ```mermaid
 sequenceDiagram
@@ -98,11 +114,26 @@ sequenceDiagram
     App->>Student: Hiển thị khóa học trong thư viện "My Courses"
 ```
 
+#### Các bước hoạt động chi tiết:
+1. **Tạo yêu cầu mua khóa học:**
+   * **Bước 1.1:** Học viên chọn một khóa học trả phí từ màn hình danh sách khóa học. Nhấn nút "Mua khóa học" trên màn hình chi tiết khóa học.
+   * **Bước 1.2:** Android Client gửi yêu cầu HTTP POST đến `/api/payments` kèm theo JSON chứa `courseId` và giá tiền của khóa học.
+   * **Bước 1.3:** `PaymentController` tiếp nhận yêu cầu. `PaymentService` sẽ tạo một thực thể `Payment` mới trong CSDL (bảng `payments`) với: trạng thái `PaymentStatus.PENDING`, tạo ngẫu nhiên một `orderCode` dựa trên Timestamp để làm mã giao dịch và liên kết bản ghi với thông tin `User` và `Course`.
+   * **Bước 1.4:** API trả về thông tin hóa đơn gồm: `orderCode`, `amount` (số tiền), thông tin tài khoản đích giả lập.
+
+2. **Thanh toán & Ghi danh:**
+   * **Bước 2.1:** Android Client hiển thị giao diện thanh toán giả lập với các thông tin chuyển khoản (Số tài khoản, ngân hàng, mã giao dịch).
+   * **Bước 2.2:** Sau khi học viên nhấn nút "Tôi đã chuyển khoản thành công", ứng dụng gửi một yêu cầu giả lập callback chuyển đổi trạng thái thanh toán đến `/api/payments/callback` hoặc `/api/payments/{orderCode}/success`.
+   * **Bước 2.3:** Tại Backend, `PaymentService` cập nhật trạng thái của bản ghi `Payment` từ `PENDING` thành `SUCCESS` trong CSDL, đồng thời cập nhật trường `paidAt` bằng thời gian hiện tại.
+   * **Bước 2.4:** Ngay sau khi thanh toán thành công, hệ thống tự động gọi `EnrollmentService` để tạo mới một bản ghi trong bảng `enrollments`. Bản ghi này ghi nhận việc học viên (`User`) đã chính thức đăng ký khóa học (`Course`), gán thuộc tính tiến độ học tập `progress = 0.0` và lưu thời gian ghi danh `enrollmentAt`.
+   * **Bước 2.5:** Backend trả về trạng thái giao dịch thành công.
+   * **Bước 2.6:** Android Client nhận được phản hồi thành công, tự động gọi API `GET /api/courses/my-courses` để cập nhật lại danh sách khóa học đã sở hữu của học viên, mở khóa và hiển thị nút "Học ngay" (Go Learning) trên màn hình chi tiết khóa học.
+
 ---
 
 ### Chức năng 3: Không Gian Học Tập Tích Hợp (Course Study Workspace)
 
-Nơi học viên tương tác trực tiếp với bài học, bao gồm: xem video bài học, làm thẻ ghi nhớ (Flashcards), và thực hiện các bài thi trắc nghiệm (Quizzes).
+Không gian học tập tích hợp mang đến giao diện học tập đa phương tiện và tương tác cao cho học viên, kết hợp video bài học, ghi chú tức thời và hệ thống ôn tập Flashcard 3D.
 
 ```mermaid
 graph LR
@@ -116,14 +147,29 @@ graph LR
     Quiz -->|Kết quả sai| Notes
 ```
 
-* **Video Player (ExoPlayer)**: Tự động tải luồng phát video từ bài học được chọn, giúp duy trì trạng thái phát ổn định.
-* **3D Flip-Card**: Cho phép học viên lật thẻ ghi nhớ để xem đáp án/giải thích và đánh dấu thẻ ở trạng thái "Chưa hiểu". Trạng thái này lập tức được lưu vào danh mục **Ghi chú học tập** để ôn tập lại sau.
+#### Các bước hoạt động chi tiết:
+1. **Xem Video bài học:**
+   * **Bước 1.1:** Học viên nhấn nút "Học ngay" từ màn hình khóa học. Ứng dụng Android điều hướng đến màn hình `CourseStudyWorkspace`.
+   * **Bước 1.2:** Ứng dụng gọi API `GET /api/courses/{courseId}/lessons` để lấy toàn bộ danh sách bài học của khóa học sắp xếp theo chỉ số `orderIndex`.
+   * **Bước 1.3:** Khi học viên chọn một bài học cụ thể, trình phát video **ExoPlayer** (thư viện truyền phát phương tiện của Google tích hợp trong Android) được khởi tạo. ExoPlayer nhận đường dẫn phát video (như liên kết YouTube hoặc Cloudinary) từ đối tượng `Lesson` và bắt đầu phát video bài học một cách mượt mà.
+   * **Bước 1.4:** Hệ thống đồng thời gọi API `GET /api/notes?lessonId={lessonId}` để tải danh sách các ghi chú mà học viên đã ghi chép riêng cho bài học này lên giao diện hiển thị.
+
+2. **Ghi chú bài học tại chỗ:**
+   * **Bước 2.1:** Ngay bên dưới trình phát video, học viên có thể nhập nội dung ghi chú nhanh vào ô văn bản và nhấn nút "Lưu ghi chú".
+   * **Bước 2.2:** Android Client gửi yêu cầu HTTP POST đến `/api/notes` kèm thông tin `lessonId` và `content`.
+   * **Bước 2.3:** Backend lưu ghi chú mới vào bảng `notes` trong CSDL liên kết với học viên và bài học hiện tại. Sau đó phản hồi lại đối tượng vừa lưu. Giao diện ứng dụng di động lập tức cập nhật ghi chú mới vào danh sách hiển thị mà không cần tải lại toàn bộ trang.
+
+3. **Học tập chủ động bằng thẻ ghi nhớ (Flashcards):**
+   * **Bước 3.1:** Học viên nhấn tab "Flashcards" trong không gian học tập.
+   * **Bước 3.2:** Ứng dụng hiển thị danh sách các thẻ khái niệm/định nghĩa cốt lõi của bài học đó dưới dạng thẻ hình ảnh trực quan.
+   * **Bước 3.3:** Khi học viên chạm vào thẻ, Jetpack Compose thực hiện hiệu ứng hoạt ảnh xoay 3D (lật quanh trục Y 180 độ) để chuyển đổi từ mặt trước (câu hỏi/thuật ngữ) sang mặt sau (đáp án/giải nghĩa).
+   * **Bước 3.4:** Nếu học viên cảm thấy chưa nắm vững nội dung của thẻ, học viên nhấn nút "Chưa hiểu". Ứng dụng Android sẽ tự động gọi hàm tạo ghi chú từ xa của `NotesManager` để lưu định nghĩa của thẻ đó vào mục ghi chú cá nhân với định dạng loại ghi chú là `FLASHCARD` để học viên dễ dàng ôn tập tập trung sau này.
 
 ---
 
 ### Chức năng 4: Hệ Thống Ghi Chú & Lịch Trình Tương Tác Lịch Học (Advanced Notes & Google Calendar Sync)
 
-Đây là chức năng quan trọng hỗ trợ lưu trữ Offline-First, hiển thị trực quan dạng Google Calendar và tự động kích hoạt báo thức/thông báo trên điện thoại.
+Chức năng quản lý ghi chú và lập lịch trình học tập cho phép lưu trữ ngoại tuyến tại chỗ (Offline-First), đồng bộ đám mây tự động khi có mạng, hiển thị lịch dạng Google Calendar và tạo báo thức nhắc nhở trên thiết bị Android.
 
 ```mermaid
 graph TD
@@ -140,19 +186,37 @@ graph TD
     Broadcast -->|Đẩy thông báo| Notif[Android NotificationManager]
 ```
 
-#### Quy Trình Đồng Bộ & Xử Lý Sự Cố:
-1. **Lưu trữ ngoại tuyến:** Khi học viên nhấn "Lưu", lịch trình sẽ được lưu ngay vào `SharedPreferences` cục bộ để đảm bảo tốc độ phản hồi tức thì và hỗ trợ sử dụng ngoại tuyến.
-2. **Đồng bộ Server:** Ứng dụng gửi yêu cầu lưu từ xa qua API. Nếu Server trả về thành công, ID tạm thời (`"0"`) sẽ được thay thế bằng ID chính thức của cơ sở dữ liệu từ Server.
-3. **Quản lý lịch nhắc nhở (Alarms):** Lịch trình được đăng ký trực tiếp với hệ điều hành Android qua `AlarmManager`. Khi đến đúng thời gian hẹn, hệ thống sẽ phát tín hiệu kích hoạt `BroadcastReceiver` và hiển thị thông báo đầu màn hình (Push Notification).
-4. **Google Calendar View (Lịch biểu đánh dấu ngày):**
-   * Hệ thống tự động phân loại các ngày có sự kiện và vẽ các chấm tròn màu sắc tương ứng dưới ô ngày đó (Đỏ = Quan trọng cao, Cam = Trung bình, Xám = Thấp).
-   * Lọc thông minh: Nhấp vào một ngày cụ thể trên lưới lịch, danh sách ghi chú bên dưới sẽ lọc ra đúng các lịch trình tương ứng của ngày đó.
+#### Các bước hoạt động chi tiết:
+1. **Lập lịch trình học tập mới:**
+   * **Bước 1.1:** Học viên mở tab **Lịch trình** trên giao diện chính `HomeScreen`.
+   * **Bước 1.2:** Nhấn nút FAB hình dấu cộng mở rộng chọn biểu tượng cuốn sổ/lịch. Giao diện hiển thị hộp thoại tạo lịch trình học tập.
+   * **Bước 1.3:** Học viên nhập các thông tin: Tiêu đề lịch học, nội dung chi tiết, chọn mức độ quan trọng (`HIGH` - Đỏ, `MEDIUM` - Cam, `LOW` - Xám).
+   * **Bước 1.4:** Học viên nhấn chọn ngày học (hiển thị `DatePickerDialog`) và giờ học cụ thể (hiển thị `TimePickerDialog`). Đồng thời có thể tích chọn nút "Bật thông báo nhắc nhở". Nhấn nút "Lưu".
+
+2. **Xử lý lưu trữ & Đồng bộ dữ liệu (Offline-First):**
+   * **Bước 2.1 (Lưu cục bộ):** Lịch trình vừa tạo được chuyển cho đối tượng `NotesManager`. Hệ thống sẽ gán một ID tạm thời là `"0"` và lưu đối tượng này xuống bộ nhớ thiết bị (`SharedPreferences` dưới dạng danh sách JSON). Giao diện lịch trình lập tức hiển thị lịch học mới vừa tạo.
+   * **Bước 2.2 (Gửi đồng bộ từ xa):** `NotesManager` kích hoạt một Coroutine gọi hàm `saveNoteRemote()` thông qua Retrofit `ApiService.createUserNote()`, truyền lên đối tượng DTO với trường `id = null` (để tránh lỗi JPA PostgreSQL tự tăng khóa chính).
+   * **Bước 2.3 (Backend):** `UserNoteController` tiếp nhận yêu cầu và gọi `UserNoteService` để lưu trữ đối tượng `UserNote` vào cơ sở dữ liệu PostgreSQL. CSDL cấp phát ID tự động chính xác cho bản ghi (Ví dụ: `id = 104`).
+   * **Bước 2.4 (Đồng bộ ID cục bộ):** API trả về đối tượng `UserNoteDto` đã lưu kèm ID mới nhận (`id = 104`). `NotesManager` cập nhật đối tượng lịch trình tạm thời trong `SharedPreferences` cục bộ thành ID `"104"`.
+
+3. **Cài đặt báo thức thiết bị (Alarm Notification Flow):**
+   * **Bước 3.1:** Nếu học viên chọn "Bật thông báo nhắc nhở", `NotesManager` sẽ gọi đến `AlarmScheduler.scheduleAlarm(context, note)`.
+   * **Bước 3.2:** `AlarmScheduler` tính toán thời điểm hẹn giờ học (dạng milliseconds) dựa vào thông tin ngày/giờ đã chọn trong `eventDate`.
+   * **Bước 3.3:** Hệ thống lấy dịch vụ hệ thống `AlarmManager` của Android và đăng ký một sự kiện báo thức chính xác bằng cờ `AlarmManager.RTC_WAKEUP` kết hợp sử dụng `PendingIntent` trỏ tới `AlarmReceiver` (một lớp kế thừa `BroadcastReceiver`). Cờ `RTC_WAKEUP` đảm bảo thiết bị sẽ tự động thức tỉnh màn hình để xử lý báo thức ngay cả khi điện thoại đang ở chế độ ngủ (Doze Mode).
+   * **Bước 3.4:** Đến đúng thời gian đã hẹn, hệ điều hành Android phát tín hiệu kích hoạt `AlarmReceiver`.
+   * **Bước 3.5:** Phương thức `onReceive()` của `AlarmReceiver` đón nhận sự kiện, trích xuất thông tin tiêu đề lịch học được truyền kèm trong Intent, tạo lập kênh thông báo (Notification Channel) và gọi `NotificationManager` của Android để hiển thị một thông báo đầu màn hình (Push Notification) kèm chuông báo và độ rung để báo hiệu cho học viên biết đã đến giờ tự học. Khi nhấp vào thông báo, ứng dụng Learnverse sẽ được khởi chạy và dẫn trực tiếp vào màn hình lịch trình.
+
+4. **Tương tác trên giao diện Google Calendar:**
+   * **Bước 4.1:** Giao diện `CalendarSection` được dựng dựa trên thư viện ngày tháng của Java (`java.time.LocalDate` và `java.time.YearMonth`). Ứng dụng vẽ một bảng lưới lịch tháng gồm 7 cột đại diện từ Thứ 2 đến Chủ nhật.
+   * **Bước 4.2:** Hệ thống duyệt qua danh sách các lịch trình đang lưu cục bộ. Nếu ngày nào có lịch học, hệ thống sẽ vẽ các chấm tròn màu sắc tương ứng dưới chữ số ngày đó. (Màu chấm được quyết định dựa vào mức độ quan trọng cao nhất của các sự kiện diễn ra trong ngày đó).
+   * **Bước 4.3 (Lọc tương tác):** Khi học viên chạm vào một ô ngày cụ thể trên lưới lịch, biến trạng thái `selectedCalendarDate` cập nhật giá trị ngày đã chọn. Lưới lịch vẽ viền xung quanh ô ngày được chọn, đồng thời danh sách lịch trình bên dưới được áp dụng bộ lọc động `filteredNotes = notesList.filter { eventDate == selectedDate }` để chỉ hiển thị các lịch học trong ngày đó.
+   * **Bước 4.4:** Học viên nhấn nút "Hiện tất cả" (Show All) để xóa bộ lọc ngày hiện tại và hiển thị lại toàn bộ lịch trình học tập của tháng.
 
 ---
 
 ### Chức năng 5: Động Cơ Trắc Nghiệm AI & Quản Lý Bài Tập (AI Quiz Engine)
 
-Giảng viên có thể tải lên tệp tài liệu tài nguyên bài giảng (PDF/TXT), hệ thống Web Admin sẽ gửi yêu cầu xử lý sang Backend để trích xuất nội dung và dùng mô hình AI tự động sinh câu hỏi trắc nghiệm.
+Hệ thống cho phép giảng viên tạo câu hỏi trắc nghiệm tự động bằng công nghệ AI từ tài liệu học tập PDF/TXT, cho phép chỉnh sửa trước khi xuất bản và hỗ trợ học viên làm bài tính điểm thực tế trên ứng dụng di động.
 
 ```mermaid
 sequenceDiagram
@@ -174,32 +238,27 @@ sequenceDiagram
     Backend->>DB: Đổi trạng thái Quiz sang isPublic = true
 ```
 
----
+#### Các bước hoạt động chi tiết:
+1. **Sinh đề trắc nghiệm bằng AI từ tài liệu bài giảng (Giảng viên):**
+   * **Bước 1.1:** Giảng viên truy cập trang quản trị web React (`frontend_admin`). Điều hướng tới mục "Tạo Quiz mới bằng AI".
+   * **Bước 1.2:** Giảng viên tải lên tài liệu định dạng PDF hoặc TXT của bài giảng và nhấn nút "Bắt đầu sinh câu hỏi bằng AI".
+   * **Bước 1.3:** Web Admin gửi yêu cầu HTTP POST dạng `multipart/form-data` đến `/api/quizzes/generate` đính kèm tệp tin.
+   * **Bước 1.4:** `UserNoteController` hoặc `QuizController` ở Backend nhận tệp tin. Hệ thống sử dụng thư viện **Apache PDFBox** để đọc và trích xuất nội dung văn bản thuần túy từ tệp PDF tải lên.
+   * **Bước 1.5:** Backend gọi dịch vụ AI (Gemini hoặc OpenAI API) truyền nội dung văn bản kèm theo Prompt hướng dẫn nghiêm ngặt: *"Hãy tạo 10 câu hỏi trắc nghiệm khách quan từ tài liệu này, mỗi câu hỏi có 4 lựa chọn, chỉ rõ chỉ số đáp án đúng và xuất ra định dạng JSON chuẩn..."*
+   * **Bước 1.6:** Dịch vụ AI phản hồi lại chuỗi JSON chứa danh sách câu hỏi và các lựa chọn đáp án.
+   * **Bước 1.7:** Backend phân tích cú pháp JSON nhận được, tạo các đối tượng và lưu trực tiếp vào cơ sở dữ liệu:
+     * Tạo bản ghi trong bảng `quizzes` với thuộc tính `isPublic = false` (chế độ nháp) và lưu liên kết file đính kèm.
+     * Tạo các bản ghi câu hỏi trong bảng `questions` tham chiếu đến Quiz.
+     * Tạo các lựa chọn đáp án trong bảng `answer_options` tham chiếu đến từng câu hỏi.
+   * **Bước 1.8:** Backend phản hồi danh sách chi tiết đề trắc nghiệm về giao diện Web Admin.
+   * **Bước 1.9:** Giảng viên xem xét các câu hỏi được sinh ra trên giao diện React Web. Có thể chỉnh sửa thủ công nội dung câu hỏi, thay đổi đáp án hoặc thêm/xóa câu hỏi. Sau khi hoàn thiện, giảng viên nhấn nút "Xuất bản" (Publish).
+   * **Bước 1.10:** Web Admin gửi yêu cầu HTTP PUT đến `/api/quizzes/{id}/publish`. Backend cập nhật trường `isPublic = true` trong cơ sở dữ liệu. Đề trắc nghiệm chính thức khả dụng cho tất cả học viên trên ứng dụng di động.
 
-## 3. Bản Đồ Tương Tác API & Thực Thể Dữ Liệu (API & Entity Mapping Matrix)
-
-Bảng dưới đây thống kê mối tương quan giữa giao diện Người dùng, API Endpoint và các bảng thực thể được thao tác trong cơ sở dữ liệu PostgreSQL:
-
-| Tên Chức Năng | API Endpoint (Backend) | Method | Giao Diện Tương Tác | Bảng CSDL Ảnh Hưởng |
-| :--- | :--- | :--- | :--- | :--- |
-| **Đăng nhập & Đăng ký** | `/api/auth/login`<br>`/api/auth/register`<br>`/api/auth/verify-otp` | POST | Màn hình Login, SignUp, Verify OTP | `users`, `user_profiles` |
-| **Mua khóa học** | `/api/payments` | POST | Màn hình Chi tiết khóa học (Android) | `payments` |
-| **Xem danh sách học** | `/api/courses/my-courses` | GET | Tab Home / Courses (Android) | `enrollments`, `courses` |
-| **Xem bài học & Video**| `/api/courses/{id}/lessons` | GET | Màn hình Course Study Workspace | `lessons` |
-| **Ghi chú bài học** | `/api/notes` | POST/GET | Giao diện ghi chú dưới video bài học | `notes` |
-| **Lấy danh sách Quiz** | `/api/quizzes` | GET | Tab Trắc nghiệm học tập | `quizzes`, `questions` |
-| **Làm bài Trắc nghiệm**| `/api/quizzes/{id}/start`<br>`/api/quizzes/attempts/{id}/complete` | POST | Giao diện Quiz play | `quiz_attempts` |
-| **Đồng bộ Lịch trình**| `/api/user-notes` | GET/POST | Tab Lịch trình (Android) | `user_notes` |
-| **Tạo/Sửa Lịch trình** | `/api/user-notes/{id}` | PUT/DELETE | Nút dấu cộng mở rộng (FAB) / Lịch | `user_notes` |
-| **Tạo Khóa học (GV)** | `/api/courses` | POST | Trang Instructor Dashboard (React Web) | `courses` |
-| **Duyệt Khóa học (AD)**| `/api/courses/{id}/approve` | PUT | Trang Admin Dashboard (React Web) | `courses`, `notifications` |
-
----
-
-## 4. Cơ Chế Bảo Mật & Phân Quyền (Security & Role Management)
-
-Hệ thống quản lý phân quyền chặt chẽ trên Spring Security thông qua cột `role` trong thực thể `User` (`Role.ADMIN`, `Role.TEACHER`, `Role.STUDENT`):
-
-* **Học viên (`STUDENT`)**: Có quyền xem các khóa học đã được phê duyệt (`APPROVED`), ghi danh học tập, thực hiện trắc nghiệm, tạo lịch trình cá nhân, và viết ghi chú.
-* **Giảng viên (`TEACHER`)**: Có quyền tạo khóa học mới, tải bài giảng lên, sinh trắc nghiệm tự động bằng AI từ tài liệu bài giảng, và theo dõi danh sách học viên đăng ký.
-* **Quản trị viên (`ADMIN`)**: Có toàn quyền hệ thống, phê duyệt hoặc từ chối các khóa học mới tải lên của giảng viên, quản lý tài khoản người dùng, và xem báo cáo thống kê doanh thu giao dịch.
+2. **Làm bài và chấm điểm trắc nghiệm (Học viên):**
+   * **Bước 2.1:** Học viên mở tab Trắc nghiệm trên ứng dụng Android. Ứng dụng gọi API `GET /api/quizzes` để hiển thị danh sách các đề trắc nghiệm công khai (`isPublic = true`).
+   * **Bước 2.2:** Học viên chọn đề thi và nhấn nút "Bắt đầu làm bài".
+   * **Bước 2.3:** Ứng dụng di động gửi yêu cầu HTTP POST đến `/api/quizzes/{id}/start`. Backend tạo một bản ghi lượt thi trong bảng `quiz_attempts` ghi nhận thời gian bắt đầu làm bài (`startedAt`), trạng thái hoàn thành `isCompleted = false` và liên kết với học viên. Trả về thông tin lượt thi cùng danh sách câu hỏi xáo trộn.
+   * **Bước 2.4:** Học viên chọn đáp án trắc nghiệm cho từng câu hỏi trên giao diện phân trang. Sau khi hoàn thành câu cuối cùng, học viên nhấn nút "Nộp bài".
+   * **Bước 2.5:** Ứng dụng di động tính toán kết quả: Mỗi câu trả lời đúng được cộng 10 điểm. Ứng dụng gửi yêu cầu nộp bài HTTP POST đến `/api/quizzes/attempts/{attemptId}/complete` kèm theo danh sách đáp án học viên đã chọn.
+   * **Bước 2.6:** Backend đối chiếu đáp án từ CSDL, tính điểm cuối cùng (`totalScore`), số điểm tối đa (`maxScore`) và phần trăm làm đúng (`percentage`). Cập nhật bản ghi `quiz_attempts` thành trạng thái `isCompleted = true` và lưu thời gian hoàn thành (`completedAt`).
+   * **Bước 2.7:** Backend trả về thông tin chi tiết kết quả. Android Client hiển thị giao diện báo điểm sinh động kèm bảng so sánh đáp án đúng/sai của từng câu để học viên rút kinh nghiệm học tập. Kết quả thi đồng thời được lưu vào hệ thống để xếp hạng thi đua học tập (Leaderboard).
